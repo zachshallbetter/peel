@@ -1,0 +1,21 @@
+/target/
+**/*.rs.bk
+.DS_Store
+.build/
+cli/.build/
+swift/**/.build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+dist/
+app/Peel.xcodeproj/
+app/*.xcworkspace/
+# local extract leftovers
+docs/*-peeled/
+docs/*-peeled-*/
+docs/_archive/
+# large generated doc bundles (source md kept)
+docs/*.zip
+# vendor blobs if huge - keep structure if small
