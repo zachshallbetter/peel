@@ -19,3 +19,4 @@ docs/_archive/
 # large generated doc bundles (source md kept)
 docs/*.zip
 # vendor blobs if huge - keep structure if small
+vendor/
