@@ -17,8 +17,9 @@
 use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand};
 use peel_core::{
-    detect_format, extract_archive, is_rar_multipart, list_archive, rar_volume_paths, Collision,
-    EnclosingDirectory, ExtractPolicy, Format, ResourceBudget,
+    all_format_capabilities, capabilities_for, detect_format, extract_archive, is_rar_multipart,
+    list_archive, rar_volume_paths, ArchiveSession, Collision, EnclosingDirectory, ExtractPolicy,
+    Format, ResourceBudget,
 };
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -29,8 +30,10 @@ use std::process::ExitCode;
     version,
     about = "Peel — open what's inside (archive extract/list/probe)",
     long_about = "Native multi-format extractor. Compatible spirit with unar/lsar, unzip, and 7z.\n\n\
+Default output is the folder that contains the archive (not /tmp).\n\n\
 Examples:\n  \
 peel archive.zip\n  \
+peel x movie.part1.rar\n  \
 peel x archive.rar -o ~/Out -r\n  \
 peel l archive.7z -j\n  \
 peel x thing.zip readme.txt *.md\n  \
@@ -60,7 +63,8 @@ struct Cli {
     members: Vec<String>,
 
     // shared extract-ish flags also work on default form
-    #[arg(short = 'o', long = "out", global = true)]
+    /// Output directory (default: folder containing the archive)
+    #[arg(short = 'o', long = "out", global = true, value_name = "DIR")]
     out: Option<PathBuf>,
     #[arg(short = 'f', long = "force-overwrite", global = true)]
     force_overwrite: bool,
@@ -234,14 +238,17 @@ fn do_probe(cli: &Cli, archive: &PathBuf) -> Result<()> {
     } else {
         vec![archive.display().to_string()]
     };
+    let caps = capabilities_for(fmt);
+    let session = ArchiveSession::open(archive).ok();
     let body = serde_json::json!({
         "path": archive.display().to_string(),
         "format": format!("{:?}", fmt),
         "entries": entries.len(),
         "multipart": multipart,
         "volumes": volumes,
-        "password_supported": matches!(fmt, Format::Rar | Format::Zip | Format::SevenZ),
-        "operations": ["list", "extract", "test", "probe"],
+        "capabilities": caps,
+        "session": session,
+        "publisher": { "name": "Snack Studio", "url": "https://snackstud.io" },
     });
     if cli.json || cli.quiet {
         println!("{}", serde_json::to_string_pretty(&body)?);
@@ -256,29 +263,19 @@ fn do_probe(cli: &Cli, archive: &PathBuf) -> Result<()> {
 }
 
 fn do_formats(cli: &Cli) -> Result<()> {
-    let rows = [
-        ("zip", "R", "ZIP/ZIP64"),
-        ("rar", "R", "RAR4/5, multipart .partN.rar / .rNN"),
-        ("7z", "R", "7-Zip"),
-        ("tar", "R", "ustar/pax"),
-        ("tar.gz/tgz", "R", "gzip + tar"),
-        ("tar.bz2/tbz2", "R", "bzip2 + tar"),
-        ("gz", "R", "single-stream gzip"),
-        ("dmg", "R/C", "hdiutil attach (macOS)"),
-        ("app", "R", "macOS bundle copy"),
-        ("pdf/exe", "I", "stage/inspect helpers"),
-    ];
+    let rows = all_format_capabilities();
     if cli.json {
-        let v: Vec<_> = rows
-            .iter()
-            .map(|(f, c, n)| serde_json::json!({"format": f, "caps": c, "notes": n}))
-            .collect();
-        println!("{}", serde_json::to_string_pretty(&v)?);
+        println!("{}", serde_json::to_string_pretty(&rows)?);
     } else {
-        println!("{:<14} {:<4} {}", "format", "caps", "notes");
-        for (f, c, n) in rows {
-            println!("{:<14} {:<4} {}", f, c, n);
+        println!("{:<14} {:<8} {:<8} {:<8} {}", "format", "list", "extract", "password", "notes");
+        for r in rows {
+            println!(
+                "{:<14} {:<8?} {:<8?} {:<8?} {}",
+                r.format, r.list, r.extract_all, r.password, r.notes
+            );
         }
+        println!("
+Publisher: Snack Studio · https://snackstud.io");
     }
     Ok(())
 }

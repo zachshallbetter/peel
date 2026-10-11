@@ -10,12 +10,14 @@ final class AppState: ObservableObject {
     @Published var isTargeted = false
     @Published var lastOutputFolder: URL?
 
-    private let prefs = PeelPreferences.shared
+private let prefs = PeelPreferences.shared
     private let jobs = JobStore.shared
     private var queue: [URL] = []
     private var activeJobId: UUID?
     private var progressTimer: Timer?
     private var cancelledJobIds: Set<UUID> = []
+    /// In-flight browse opens (standardized paths) — Launch Services can deliver twice.
+    private var browseInFlight: Set<String> = []
 
     init() {
         DispatchQueue.main.async {
@@ -29,16 +31,64 @@ final class AppState: ObservableObject {
         AppDelegate.shared?.prefs = prefs
     }
 
-    func enqueueOpen(_ url: URL) {
-        let silent = prefs.silentBackgroundExtract || !prefs.openWindowOnDrop
+    /// Finder double-click / Open With.
+    /// Default: mount with PeelFS and open the folder in Finder (no full extract).
+    /// Falls back to extract if PeelFS is unavailable or format is unsupported.
+func enqueueOpen(_ url: URL) {
+        if prefs.browseOnOpen, PeelFSMount.supportsBrowse(url) {
+            let key = url.standardizedFileURL.path
+            if browseInFlight.contains(key) {
+                return
+            }
+            browseInFlight.insert(key)
+
+            // Snapshot Finder window *before* background work so we can retarget
+            // the same tab (archive-as-folder feel) instead of opening a new one.
+            let finderCtx = PeelFSMount.captureFinderContext(for: url)
+            Task.detached(priority: .userInitiated) {
+                await MainActor.run {
+                    AppDelegate.shared?.noteBrowseJobStarted()
+                    AppDelegate.shared?.hideMainWindows()
+                }
+                defer {
+                    Task { @MainActor in
+                        self.browseInFlight.remove(key)
+                    }
+                }
+                do {
+                    let location = try await Task.detached(priority: .userInitiated) {
+                        try PeelFSMount.mount(url)
+                    }.value
+                    await MainActor.run {
+                        let mode = PeelFSMount.navigateFinder(
+                            to: location,
+                            preferringReuse: true,
+                            context: finderCtx
+                        )
+                        self.status = "Browsing \(url.lastPathComponent)"
+                        self.detail = "\(location.path) [\(mode)]"
+                        AppDelegate.shared?.noteBrowseJobFinished()
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.status = "Browse failed"
+                        self.detail = error.localizedDescription
+                        AppDelegate.shared?.noteBrowseJobFinished()
+                        AppDelegate.shared?.hideMainWindows()
+                    }
+                }
+            }
+            return
+        }
+
+        // Non-ZIP or browse disabled: extract (Services-style).
+        let silent = prefs.silentBackgroundExtract && !prefs.openWindowOnDrop
         if silent {
+            AppDelegate.shared?.enterPassiveMode()
             AppDelegate.shared?.hideMainWindows()
             extract(archive: url, silent: true)
         } else {
-            if prefs.openWindowOnDrop {
-                NSApp.activate(ignoringOtherApps: true)
-                AppDelegate.shared?.showMainWindow()
-            }
+            AppDelegate.shared?.showMainWindow()
             extract(archive: url, silent: false)
         }
     }
@@ -60,7 +110,12 @@ final class AppState: ObservableObject {
         panel.message = "Choose items to peel"
         guard panel.runModal() == .OK else { return }
         for url in panel.urls {
-            extract(archive: url, silent: false)
+            // File picker: prefer browse when possible, else extract in-window.
+            if prefs.browseOnOpen, PeelFSMount.supportsBrowse(url) {
+                enqueueOpen(url)
+            } else {
+                extract(archive: url, silent: false)
+            }
         }
     }
 
@@ -80,6 +135,7 @@ final class AppState: ObservableObject {
         _ = provider.loadObject(ofClass: URL.self) { [weak self] url, _ in
             guard let url else { return }
             Task { @MainActor in
+                // Drop on window: extract (explicit peel), not mount.
                 self?.extract(archive: url, silent: false)
             }
         }
@@ -110,6 +166,7 @@ final class AppState: ObservableObject {
         }
         isWorking = false
         activeJobId = nil
+        AppDelegate.shared?.noteSilentJobFinished()
         drainQueue()
     }
 
@@ -131,16 +188,24 @@ final class AppState: ObservableObject {
 
         var job = PeelJob.new(source: archive)
         job.status = .running
+        // Progress denominator: prefer archive size (compressed). Unpacked can be larger;
+        // we still show growth of the destination folder for multi-GB RARs.
         if let vals = try? archive.resourceValues(forKeys: [.fileSizeKey]), let size = vals.fileSize {
             job.totalBytes = UInt64(size)
             job.processedBytes = 0
         }
+        let expectedDest = destinationOverride
+            ?? (prefs.extractBesideSource ? PeelExtractor.defaultDestination(for: archive) : (prefs.fixedDestinationURL ?? PeelExtractor.defaultDestination(for: archive)))
+        // Peel folder name is chosen by the engine; watch the parent and any *-peeled dirs.
+        job.destinationPath = expectedDest.path
         jobs.upsert(job)
         activeJobId = job.id
         let jobId = job.id
         let started = Date()
+        let watchRoot = expectedDest
 
         if silent {
+            AppDelegate.shared?.noteSilentJobStarted()
             ProgressPanelController.shared.show(job: job) { [weak self] in
                 self?.cancelActiveExtract()
             }
@@ -176,15 +241,22 @@ final class AppState: ObservableObject {
                       j.status == .running else { return }
 
                 let elapsed = Date().timeIntervalSince(started)
-                // Ease toward 0.95 over ~minutes for large archives; small ones finish before this matters.
-                let ease = 1.0 - exp(-elapsed / 45.0) // ~63% at 45s, ~95% asymptote of the ease itself
-                let p = min(0.95, max(0.03, ease * 0.95))
-
-                if let total = j.totalBytes, total > 0 {
-                    j.processedBytes = UInt64(Double(total) * p)
+                // Prefer real on-disk growth under the destination parent (streaming RAR/ZIP).
+                let grown = Self.directoryBytes(under: watchRoot)
+                if let total = j.totalBytes, total > 0, grown > 0 {
+                    // Unpacked can exceed archive size; cap display at 95% until complete.
+                    let ratio = min(0.95, Double(grown) / Double(total))
+                    j.processedBytes = UInt64(Double(total) * max(0.02, ratio))
                 } else {
-                    j.processedItems = Int(p * 100)
-                    j.itemCount = 100
+                    // Time ease fallback when nothing written yet (header parse / first block).
+                    let ease = 1.0 - exp(-elapsed / 90.0)
+                    let p = min(0.15, max(0.02, ease * 0.15))
+                    if let total = j.totalBytes, total > 0 {
+                        j.processedBytes = UInt64(Double(total) * p)
+                    } else {
+                        j.processedItems = Int(p * 100)
+                        j.itemCount = 100
+                    }
                 }
                 JobStore.shared.upsert(j)
                 if silent && !ProgressPanelController.shared.isDismissed(jobId) {
@@ -320,6 +392,9 @@ final class AppState: ObservableObject {
                 }
 
                 self.cancelledJobIds.remove(jobId)
+                if silent {
+                    AppDelegate.shared?.noteSilentJobFinished()
+                }
                 self.drainQueue(silentDefault: silent)
             }
         }
@@ -329,6 +404,37 @@ final class AppState: ObservableObject {
         guard !isWorking, !queue.isEmpty else { return }
         let next = queue.removeFirst()
         extract(archive: next, silent: silentDefault)
+    }
+
+    /// Sum file sizes under root and immediate *-peeled children (best-effort progress).
+    private static func directoryBytes(under root: URL) -> UInt64 {
+        let fm = FileManager.default
+        var total: UInt64 = 0
+        var candidates: [URL] = [root]
+        if let kids = try? fm.contentsOfDirectory(at: root, includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey], options: [.skipsHiddenFiles]) {
+            for u in kids {
+                let name = u.lastPathComponent
+                if name.hasSuffix("-peeled") || name.contains("peeled") {
+                    candidates.append(u)
+                }
+                if let vals = try? u.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
+                   vals.isRegularFile == true,
+                   let sz = vals.fileSize {
+                    total += UInt64(sz)
+                }
+            }
+        }
+        for dir in candidates {
+            guard let en = fm.enumerator(at: dir, includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey], options: [.skipsHiddenFiles]) else { continue }
+            for case let url as URL in en {
+                if let vals = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
+                   vals.isRegularFile == true,
+                   let sz = vals.fileSize {
+                    total += UInt64(sz)
+                }
+            }
+        }
+        return total
     }
 
     private static func summarize(_ json: String) -> String {

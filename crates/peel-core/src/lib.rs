@@ -2,6 +2,7 @@
 //!
 //! PEL-002: every adapter shares path containment, symlink rejection, and budgets.
 
+mod capabilities;
 mod container;
 mod detect;
 mod extract;
@@ -9,9 +10,12 @@ mod pathutil;
 mod policy;
 mod rar;
 mod safety;
+mod session;
 mod sevenz;
 
+pub use capabilities::{all_format_capabilities, capabilities_for, FormatCapabilities, Support};
 pub use detect::{detect_format, Format};
+pub use session::{ArchiveSession, SessionState, SourceIdentity};
 pub use extract::{extract_archive, list_archive, ArchiveEntry, ExtractResult};
 pub use policy::{Collision, EnclosingDirectory, ExtractPolicy};
 pub use safety::ResourceBudget;

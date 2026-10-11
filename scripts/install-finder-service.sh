@@ -27,7 +27,7 @@ def write_workflow(name: str, menu: str, extra: str = ""):
     contents = wf / "Contents"
     contents.mkdir(parents=True)
     info = {
-        "CFBundleIdentifier": f"dev.shallbetter.peel.wf.{name.lower().replace(' ', '').replace('&','and')}",
+        "CFBundleIdentifier": f"io.snackstud.peel.wf.{name.lower().replace(' ', '').replace('&','and')}",
         "CFBundleName": menu,
         "CFBundlePackageType": "BNDL",
         "CFBundleShortVersionString": "0.2.0",
@@ -70,7 +70,7 @@ write_workflow("Peel", "Peel")
 write_workflow(
     "Peel & Reveal",
     "Peel & Reveal",
-    extra='defaults write dev.shallbetter.peel peel._serviceRevealOnce -bool true\n',
+    extra='defaults write io.snackstud.peel peel._serviceRevealOnce -bool true\n',
 )
 PY
 
@@ -115,7 +115,7 @@ chmod +x "${SERVICES}/peel-here.sh" 2>/dev/null || true
 
 if command -v duti >/dev/null 2>&1; then
   for ext in zip rar 7z tar gz tgz cbz cbr; do
-    duti -s dev.shallbetter.peel ".$ext" all 2>/dev/null || true
+    duti -s io.snackstud.peel ".$ext" all 2>/dev/null || true
   done
 fi
 

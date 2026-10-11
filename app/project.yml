@@ -1,6 +1,6 @@
 name: Peel
 options:
-  bundleIdPrefix: dev.shallbetter
+  bundleIdPrefix: io.snackstud
   deploymentTarget:
     macOS: "13.0"
   createIntermediateGroups: true
@@ -14,9 +14,8 @@ settings:
     SWIFT_VERSION: "5.9"
     MACOSX_DEPLOYMENT_TARGET: "13.0"
     PRODUCT_NAME: Peel
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
-    CODE_SIGN_IDENTITY: "-"
+    MARKETING_VERSION: "0.2.0"
+    CURRENT_PROJECT_VERSION: "3"
     ENABLE_HARDENED_RUNTIME: NO
     COMBINE_HIDPI_IMAGES: YES
 
@@ -29,11 +28,14 @@ targets:
     dependencies:
       - package: PeelKit
         product: PeelKit
+      - target: PeelFSExtension
+        embed: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: dev.shallbetter.peel
+        PRODUCT_BUNDLE_IDENTIFIER: io.snackstud.peel
         INFOPLIST_FILE: Peel/Info.plist
         GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: Peel/Peel.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../Helpers"
     postBuildScripts:
@@ -52,3 +54,25 @@ targets:
           cp -f "${ENGINE}" "${RES}/peel"
           chmod +x "${RES}/peel"
           echo "Embedded peel engine"
+
+  PeelFSExtension:
+    type: extensionkit-extension
+    platform: macOS
+    sources:
+      - path: PeelFSExtension
+        excludes:
+          - Info.plist
+          - "*.entitlements"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.snackstud.peel.PeelFS
+        PRODUCT_NAME: PeelFSExtension
+        INFOPLIST_FILE: PeelFSExtension/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: PeelFSExtension/PeelFSExtension.entitlements
+        MACOSX_DEPLOYMENT_TARGET: "26.0"
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks"
+        SKIP_INSTALL: YES
+        PRODUCT_MODULE_NAME: PeelFSExtension
+    dependencies:
+      - sdk: FSKit.framework

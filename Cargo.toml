@@ -8,10 +8,10 @@ members = [
 default-members = ["crates/peel-cli"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
-authors = ["Zach Shallbetter"]
+authors = ["Snack Studio <hello@snackstud.io>"]
 
 [workspace.dependencies]
 anyhow = "1"

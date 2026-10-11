@@ -176,5 +176,9 @@
 	<true/>
 	<key>NSSupportsSuddenTermination</key>
 	<true/>
+<key>NSSystemExtensionUsageDescriptionKey</key>
+	<string>Peel uses a File System extension (PeelFS) so you can browse archives as folders in Finder.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Peel needs to control Finder so double-clicking an archive opens its contents in the same window, like a folder.</string>
 </dict>
 </plist>

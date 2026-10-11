@@ -3,21 +3,28 @@ import AppKit
 
 struct SettingsPage: View {
     @EnvironmentObject private var prefs: PeelPreferences
+    @StateObject private var fskitStatus = PeelFSStatusModel()
     @State private var note: String?
+    @State private var showSetup = false
+    @State private var cacheStats = PeelFSMount.cacheStats()
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
+        ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 24) {
                 Text("Settings")
                     .font(.largeTitle.bold())
 
-                group("Double-click / Open With") {
-                    Toggle("Extract without opening a window (quick popup only)", isOn: $prefs.silentBackgroundExtract)
-                    Toggle("Also open the main Peel window", isOn: $prefs.openWindowOnDrop)
-                        .disabled(prefs.silentBackgroundExtract)
-                    Text("Right-click extract uses the compact progress popup — like Archive Utility.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                group("Browse & PeelFS") {
+                    PeelBrowseAndFSKitSection(
+                        prefs: prefs,
+                        status: fskitStatus,
+                        showAdvancedExtractFallback: true
+                    )
+                    Button("Apply as default handler now") {
+                        prefs.claimDefaultHandler = true
+                        prefs.applyDefaultHandlerClaim()
+                        note = "Peel is now the default for supported archives (where macOS allows)."
+                    }
                 }
 
                 group("Extraction") {
@@ -35,27 +42,52 @@ struct SettingsPage: View {
                     }
                 }
 
-                group("Finder") {
-                    Toggle("Claim default handler for zip, rar, 7z…", isOn: $prefs.claimDefaultHandler)
-                    Button("Apply default handler now") {
-                        prefs.claimDefaultHandler = true
-                        prefs.applyDefaultHandlerClaim()
-                        note = "Default handler updated."
+                group("Browse cache") {
+                    Text(cacheSummary)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Browse folders are created next to the archive when possible (else under Application Support). They expire after 24 hours and are capped at about 2 GB total. Clear anytime.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 10) {
+                        Button("Clear Cache") {
+                            clearCache()
+                        }
+                        .disabled(cacheStats.volumeCount == 0 && cacheStats.totalBytes == 0)
+                        .accessibilityIdentifier("clearBrowseCache")
+                        .accessibilityLabel("Clear Cache")
+                        Button("Show in Finder") {
+                            NSWorkspace.shared.open(URL(fileURLWithPath: cacheStats.path))
+                        }
+                        .accessibilityIdentifier("showBrowseCache")
+                        Button("Refresh") {
+                            refreshCacheStats()
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityIdentifier("refreshBrowseCache")
                     }
-                    Toggle("Install “Peel Here” service", isOn: $prefs.installFinderService)
+                    if let note, note.hasPrefix("Cache") {
+                        Text(note).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+
+                group("Finder Services") {
+                    Toggle("Install Peel / Peel to… / Peel & Reveal", isOn: $prefs.installFinderService)
                     Button("Install / repair Finder service") {
                         prefs.installFinderService = true
                         prefs.runFinderServiceInstallIfNeeded()
                         note = "Service install attempted."
                     }
-                    Text("Or: file → Get Info → Open with → Peel → Change All…")
+                    Text("Services always extract. Double-click uses Browse & PeelFS above.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 group("Setup") {
-                    Button("Run quick setup again…") {
-                        prefs.didCompleteSetup = false
+                    Button("Run setup assistant again…") {
+                        showSetup = true
                     }
                     if let note {
                         Text(note).font(.caption).foregroundStyle(.secondary)
@@ -70,7 +102,9 @@ struct SettingsPage: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Peel").font(.headline)
                             Text("Open what's inside.").foregroundStyle(.secondary)
-                            Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0")
+                            Link("Snack Studio", destination: URL(string: "https://snackstud.io")!)
+                                .font(.caption)
+                            Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.2.0")
                                 .font(.caption.monospaced())
                                 .foregroundStyle(.tertiary)
                         }
@@ -79,6 +113,16 @@ struct SettingsPage: View {
             }
             .padding(28)
             .frame(maxWidth: 640, alignment: .leading)
+        }
+        .onAppear {
+            fskitStatus.refresh()
+            refreshCacheStats()
+        }
+        .sheet(isPresented: $showSetup) {
+            SetupView(prefs: prefs) {
+                showSetup = false
+                fskitStatus.refresh()
+            }
         }
     }
 
@@ -106,5 +150,30 @@ struct SettingsPage: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         prefs.fixedDestinationURL = url
         prefs.extractBesideSource = false
+    }
+
+    private var cacheSummary: String {
+        let bytes = ByteCountFormatter.string(fromByteCount: Int64(cacheStats.totalBytes), countStyle: .file)
+        if cacheStats.volumeCount == 0 {
+            return "No browse volumes cached."
+        }
+        var s = "\(cacheStats.volumeCount) volume\(cacheStats.volumeCount == 1 ? "" : "s") · \(bytes)"
+        if let oldest = cacheStats.oldestAccess {
+            let rel = RelativeDateTimeFormatter()
+            rel.unitsStyle = .short
+            s += " · oldest \(rel.localizedString(for: oldest, relativeTo: Date()))"
+        }
+        return s
+    }
+
+    private func refreshCacheStats() {
+        cacheStats = PeelFSMount.cacheStats()
+    }
+
+    private func clearCache() {
+        let result = PeelFSMount.clearAllBrowseVolumes()
+        refreshCacheStats()
+        let freed = ByteCountFormatter.string(fromByteCount: Int64(result.freedBytes), countStyle: .file)
+        note = "Cache cleared — removed \(result.removed) folder\(result.removed == 1 ? "" : "s"), freed \(freed)."
     }
 }

@@ -19,6 +19,8 @@ final class PeelPreferences: ObservableObject {
         static let claimDefaultHandler = "peel.claimDefaultHandler"
         static let fixedDestinationPath = "peel.fixedDestinationPath"
         static let deleteArchiveAfterExtract = "peel.deleteArchiveAfterExtract"
+        /// Double-click / Open With: browse via PeelFS (mount) instead of extracting.
+        static let browseOnOpen = "peel.browseOnOpen"
     }
 
     @Published var didCompleteSetup: Bool {
@@ -33,14 +35,19 @@ final class PeelPreferences: ObservableObject {
         didSet { defaults.set(revealAfterExtract, forKey: Key.revealAfterExtract) }
     }
 
-    /// When false (default), double-click / Open With does not raise the main window.
+    /// When false, Open With does not raise the main Peel window (used with extract mode).
     @Published var openWindowOnDrop: Bool {
         didSet { defaults.set(openWindowOnDrop, forKey: Key.openWindowOnDrop) }
     }
 
-    /// When true (default), Open With extracts without showing the UI (Unarchiver-style).
+    /// When true, Services / explicit extract uses the compact HUD without the main window.
     @Published var silentBackgroundExtract: Bool {
         didSet { defaults.set(silentBackgroundExtract, forKey: Key.silentBackgroundExtract) }
+    }
+
+    /// Double-click opens archive via PeelFS mount in Finder (Windows-style browse).
+    @Published var browseOnOpen: Bool {
+        didSet { defaults.set(browseOnOpen, forKey: Key.browseOnOpen) }
     }
 
     @Published var installFinderService: Bool {
@@ -69,11 +76,13 @@ final class PeelPreferences: ObservableObject {
         didCompleteSetup = d.object(forKey: Key.didCompleteSetup) as? Bool ?? false
         extractBesideSource = d.object(forKey: Key.extractBesideSource) as? Bool ?? true
         revealAfterExtract = d.object(forKey: Key.revealAfterExtract) as? Bool ?? true
-        // Unarchiver-like defaults: don't force the window for Open With.
         openWindowOnDrop = d.object(forKey: Key.openWindowOnDrop) as? Bool ?? false
+        // Services still prefer silent HUD extract.
         silentBackgroundExtract = d.object(forKey: Key.silentBackgroundExtract) as? Bool ?? true
+        // Double-click default: browse as folder via PeelFS (not Archive Utility extract).
+        browseOnOpen = d.object(forKey: Key.browseOnOpen) as? Bool ?? true
         installFinderService = d.object(forKey: Key.installFinderService) as? Bool ?? true
-        claimDefaultHandler = d.object(forKey: Key.claimDefaultHandler) as? Bool ?? false
+        claimDefaultHandler = d.object(forKey: Key.claimDefaultHandler) as? Bool ?? true
         fixedDestinationPath = d.string(forKey: Key.fixedDestinationPath)
         deleteArchiveAfterExtract = d.object(forKey: Key.deleteArchiveAfterExtract) as? Bool ?? false
     }
@@ -84,7 +93,7 @@ final class PeelPreferences: ObservableObject {
 
     func applyDefaultHandlerClaim() {
         guard claimDefaultHandler else { return }
-        let bundleId = Bundle.main.bundleIdentifier ?? "dev.shallbetter.peel"
+        let bundleId = Bundle.main.bundleIdentifier ?? "io.snackstud.peel"
         for ext in Self.claimableExtensions {
             guard let uti = UTType(filenameExtension: ext)?.identifier else { continue }
             LSSetDefaultRoleHandlerForContentType(
