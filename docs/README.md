@@ -10,6 +10,8 @@ Canonical documents use lowercase kebab-case names without product prefixes or f
 | `finder-quicklook.md` | Finder integration, Quick Look, and archive navigation |
 | `macos-system-integration.md` | FSKit, QL, Spotlight, coordination, Disk Arbitration, CryptoKit investigation |
 | `fskit-peelfs.md` | PeelFS FSKit extension spike (MAC-004) |
+| `finder-open-interaction.md` | Double-click open / browse vs extract contract |
+| `peelfs-xpc-bridge.md` | PeelFS/QL → peel-core XPC design |
 | `golden-gate.md` | Liquid-glass visual system (Snack Studio) |
 | `roadmap-next.md` | Near-term implementation checklist |
 | `encryption.md` | Encryption auditing, recovery, and repair |

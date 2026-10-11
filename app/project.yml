@@ -30,6 +30,8 @@ targets:
         product: PeelKit
       - target: PeelFSExtension
         embed: true
+      - target: PeelQLPreview
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.snackstud.peel
@@ -76,3 +78,24 @@ targets:
         PRODUCT_MODULE_NAME: PeelFSExtension
     dependencies:
       - sdk: FSKit.framework
+
+  # FND-001: Space on ZIP → bounded entry list (scaffold; later peel XPC).
+  PeelQLPreview:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: PeelQLPreview
+        excludes:
+          - Info.plist
+          - "*.entitlements"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.snackstud.peel.QuickLook
+        PRODUCT_NAME: PeelQLPreview
+        INFOPLIST_FILE: PeelQLPreview/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: PeelQLPreview/PeelQLPreview.entitlements
+        MACOSX_DEPLOYMENT_TARGET: "13.0"
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks"
+        SKIP_INSTALL: YES
+        PRODUCT_MODULE_NAME: PeelQLPreview

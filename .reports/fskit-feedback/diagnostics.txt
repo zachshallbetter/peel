@@ -1,0 +1,17 @@
+Collected: 2026-10-11T04:39:13Z
+ProductName:		macOS
+ProductVersion:		27.0
+BuildVersion:		26A428
+--- pluginkit ---
++    io.snackstud.peel.PeelFS(0.2.0)
+--- codesign entitlements ---
+Executable=/Applications/Peel.app/Contents/Extensions/PeelFSExtension.appex/Contents/MacOS/PeelFSExtension
+warning: Specifying ':' in the path is deprecated and will not work in a future release
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>com.apple.developer.fskit.fsmodule</key><true/><key>com.apple.security.app-sandbox</key><true/><key>com.apple.security.files.downloads.read-only</key><true/><key>com.apple.security.files.user-selected.read-only</key><true/></dict></plist>
+--- profile ---
+Mac Team Provisioning Profile: io.snackstud.peel.PeelFS
+fskit True
+{'com.apple.developer.fskit.fsmodule': True, 'com.apple.application-identifier': 'PKH7G93GGD.io.snackstud.peel.PeelFS', 'keychain-access-groups': ['PKH7G93GGD.*'], 'com.apple.developer.team-identifier': 'PKH7G93GGD'}
+--- mount ---
+Module io.snackstud.peel.PeelFS is disabled!
+mount: Unable to invoke task
