@@ -1,10 +1,11 @@
 # Peel — Finder, Quick Look & In-Archive Opening
 
-**Version:** 0.1.1 | **Date:** 2026-10-11 | **Status:** Design + FND-001 scaffold in tree
+**Version:** 0.1.2 | **Date:** 2026-10-11 | **Status:** Design + FND-001 **scaffold only** — not a shipped QL product  
+**Shipped truth:** [`SHIPPED.md`](SHIPPED.md)
 
-**Double-click / Open With interaction (browse-first):** see [`finder-open-interaction.md`](finder-open-interaction.md). Production list/read sharing: [`peelfs-xpc-bridge.md`](peelfs-xpc-bridge.md).
+**Double-click / Open With:** [`finder-open-interaction.md`](finder-open-interaction.md). XPC design: [`peelfs-xpc-bridge.md`](peelfs-xpc-bridge.md).
 
-**Scaffold:** `app/PeelQLPreview` — ZIP-only bounded listing via `QLPreviewingController`. Not yet the full tree UI or XPC-backed listing.
+**In tree:** `app/PeelQLPreview` — bounded ZIP text listing. **Not** qualified multi-format preview, entry-open API, or production PeelFS.
 
 ## Goal
 

@@ -1,25 +1,29 @@
 # Reflective Rust × Peel
 
-[Reflective Rust](https://github.com/zachshallbetter/reflective-rust) provides runtime semantic contracts (RSP envelopes, OSG topology, `#[derive(Reflectable)]`).
+**Status:** Optional future integration notes — **not wired into peel-core**  
+**Shipped truth:** [`SHIPPED.md`](SHIPPED.md)
 
-## Where Peel uses the ideas
+[Reflective Rust](https://github.com/zachshallbetter/reflective-rust) is a separate research stack (RSP envelopes, OSG, `#[derive(Reflectable)]`). Peel does **not** depend on it today.
 
-| Peel surface | Reflective concept | Status |
-|--------------|-------------------|--------|
-| `peel formats` / `peel probe -j` | Capability descriptors per format | Implemented as plain JSON (agent-friendly) |
-| MCP `peel_*` tools | Operation contracts | Implemented |
-| Future in-process FFI types | `#[derive(Reflectable)]` on `ArchiveEntry` / `ExtractResult` | Optional path dep when wiring libpeel |
+## Honest mapping
 
-## Why not a hard dependency yet
+| Peel surface | Reflective idea | Reality in this repo |
+| --- | --- | --- |
+| `peel formats` / `peel probe -j` | Capability-shaped descriptors | **Plain JSON from CLI** — no RSP envelopes |
+| MCP `peel_*` tools | Operation contracts for agents | **Not implemented** (no MCP server in tree) |
+| FFI result types | `#[derive(Reflectable)]` | **Not applied** — peel-ffi is a thin C ABI scaffold |
 
-Reflective Rust is edition 2024 research crates (protocol, derive, CSG). Peel’s engine stays lean for shipping. We mirror **capability-shaped JSON** in CLI/MCP now; full `reflective-rust-protocol` envelopes can attach later for signed provenance without changing the peel UX.
+## Why no hard dependency
 
-## Optional integration
+Reflective Rust is edition-2024 research crates. Peel’s engine stays lean for shipping extract/browse.  
+We may later emit richer envelopes from `probe` without changing UX; that is **roadmap**, not HEAD.
+
+## If integrating later
 
 ```toml
-# crates/peel-core/Cargo.toml (future)
-reflective-rust-protocol = { path = "../../reflective-rust/crates/reflective-rust-protocol" }
-reflective-rust-derive = { path = "../../reflective-rust/crates/reflective-rust-derive" }
+# crates/peel-core/Cargo.toml (future only)
+# reflective-rust-protocol = { path = "..." }
+# reflective-rust-derive = { path = "..." }
 ```
 
-Then annotate public result types and emit RSP envelopes from `peel probe --rsp`.
+Do not design peel features that **require** Reflective Rust until this file and SHIPPED.md say otherwise.

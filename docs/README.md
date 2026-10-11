@@ -1,10 +1,14 @@
 # Peel documentation
 
-Canonical documents use lowercase kebab-case names without product prefixes or filename version suffixes. Document versions remain in the document header.
+**Start here for what exists in code:** [`SHIPPED.md`](SHIPPED.md).  
+Most other docs are **targets, design, or research**. Do not implement against identity/Pro/MCP/create claims unless SHIPPED.md lists them.
+
+Canonical documents use lowercase kebab-case names. Versions live in each document header.
 
 | File | Purpose |
 | --- | --- |
-| `specification.md` | Product requirements and release milestones |
+| **`SHIPPED.md`** | **Source of truth: shipped vs scaffold vs roadmap** |
+| `specification.md` | Target requirements (not a HEAD feature list) |
 | `architecture.md` | System architecture overview |
 | `containers.md` | Formats, volume resolution, and container graph |
 | `finder-quicklook.md` | Finder integration, Quick Look, and archive navigation |
@@ -17,15 +21,13 @@ Canonical documents use lowercase kebab-case names without product prefixes or f
 | `encryption.md` | Encryption auditing, recovery, and repair |
 | `encryption-architecture.md` | Encryption and recovery system design |
 | `encryption-research.md` | Research survey and constraints |
-| `product-identity.md` | Identity and monetization decisions |
+| `product-identity.md` | Identity/monetization **roadmap** (not shipped Pro/MCP/create) |
 | `competitive.md` | Competitor and positioning analysis |
 | `review.md` | Implementation review and remediation |
-| `reflective-rust.md` | Reflective Rust integration notes |
+| `reflective-rust.md` | Optional future notes — **not integrated**; no MCP |
 
 ## Consolidation
 
-- Removed `PEEL_FINDER_QUICKLOOK_INTEGRATION_v0.1.md` in favor of the longer `finder-quicklook.md`.
-- Removed `PEEL_ENCRYPTION_AUDIT_AND_REPAIR_v0.1.md` in favor of the longer `encryption.md`.
-- Renamed the remaining prefixed documents to lowercase kebab-case names.
-- Kept distinct encryption architecture, research, and product identity documents; they are related, not exact duplicates.
-- No substantive content was rewritten; version metadata inside documents is retained.
+- Prefer [`SHIPPED.md`](SHIPPED.md) over any aspirational matrix in identity/spec docs.
+- Removed old prefixed PEEL_* filenames in favor of kebab-case docs.
+- `product-identity.md` and `reflective-rust.md` corrected 2026-10-11: roadmap-only claims (no MCP/Pro/create as shipped).
