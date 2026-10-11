@@ -2,6 +2,8 @@
 
 **Version:** 0.1.0 | **Date:** 2026-10-10 | **Status:** Proposed design, not implemented
 
+**Double-click / Open With interaction (browse-first):** see [`finder-open-interaction.md`](finder-open-interaction.md). This document covers Quick Look, open-one-entry, and PeelFS mount contracts; open-archive defaults evolved to browse-first in v0.2 of that contract.
+
 ## Goal
 
 Make supported archives feel like folders in macOS Finder: preview archive contents with Space, browse individual entries in Finder where a supported filesystem bridge is installed, and open individual files without manually extracting the entire archive. Preserve the existing double-click-to-extract default unless the user explicitly changes it.
@@ -82,3 +84,12 @@ Test: ZIP regular/ZIP64/encrypted; RAR and 7z solid/encrypted; TAR; ISO; missing
 ## Architectural decision
 
 Ship Tier A first, Tier B next, and keep Tier C optional until the filesystem dependency and macOS compatibility are qualified. This achieves Finder-native Quick Look quickly without promising APIs Finder does not expose.
+
+## Product and entitlement decision
+
+Quick Look, opening individual entries and qualified optional Finder mounting are core **Free Peel** experiences, not paid differentiators. Preserve one application identity. The `Forgot Password` action from an encrypted archive may lead to a free feasibility preflight and then optional Pro recovery; ordinary known-password unlock remains free. See `PEEL_PRODUCT_IDENTITY_AND_MONETIZATION_v0.1.md`.
+
+## Related investigation
+
+Broader OS framework opportunities (FSKit vs macFUSE, File Provider, Spotlight, Disk Arbitration, CryptoKit, UTType, Compression.framework) and the P0–P3 experiment matrix live in `macos-system-integration.md`. This document remains the **UX tier and FND ticket** source of truth for Quick Look / open-entry / PeelFS product behavior.
+

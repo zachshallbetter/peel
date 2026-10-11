@@ -66,15 +66,15 @@ final class ProgressPanelController {
     }
 
     private func position(_ panel: NSPanel) {
-        // Prefer the screen with the mouse; fall back to main.
+        // Top-center of the screen that contains the mouse (fallback: main).
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
         guard let screen else { return }
         let visible = screen.visibleFrame
-        let margin: CGFloat = 20
+        let topMargin: CGFloat = 28
         let origin = NSPoint(
-            x: visible.maxX - panelSize.width - margin,
-            y: visible.minY + margin
+            x: visible.midX - panelSize.width / 2,
+            y: visible.maxY - panelSize.height - topMargin
         )
         panel.setFrame(NSRect(origin: origin, size: panelSize), display: true)
     }
@@ -86,8 +86,6 @@ final class ProgressPanelController {
             // is handled exclusively by show().
             return
         }
-        // Keep HUD on the correct screen corner if displays changed.
-        position(panel)
         panel.orderFrontRegardless()
 
         if job.status == .succeeded {
@@ -124,6 +122,10 @@ final class ProgressPanelController {
 
     func isDismissed(_ jobId: UUID) -> Bool {
         dismissed.contains(jobId)
+    }
+
+    var hasVisiblePanels: Bool {
+        panels.values.contains { $0.isVisible }
     }
 }
 
@@ -237,8 +239,12 @@ struct ProgressPanelView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.28), radius: 16, y: 6)
+                .fill(Color(nsColor: .windowBackgroundColor))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+                }
+                .shadow(color: .black.opacity(0.18), radius: 12, y: 6)
         }
         .padding(6)
     }
@@ -248,6 +254,10 @@ struct ProgressPanelView: View {
             return "\(done) of \(total) items"
         }
         if let total = job.totalBytes, let done = job.processedBytes, total > 0 {
+                    // Archive size is compressed; note multi-GB jobs take time.
+            if total > 512 * 1024 * 1024 {
+                return "\(byteString(done)) · large archive, keep waiting…"
+            }
             return "\(byteString(done)) of \(byteString(total))"
         }
         return "Working…"

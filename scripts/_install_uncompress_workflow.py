@@ -10,7 +10,7 @@ contents = wf_root / "Contents"
 contents.mkdir(parents=True)
 
 info = {
-    "CFBundleIdentifier": "dev.shallbetter.peel.uncompress",
+    "CFBundleIdentifier": "io.snackstud.peel.uncompress",
     "CFBundleName": "Uncompress",
     "CFBundlePackageType": "BNDL",
     "CFBundleShortVersionString": "1.0",

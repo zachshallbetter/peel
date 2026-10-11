@@ -70,7 +70,15 @@ pub fn list_archive(path: &Path) -> Result<Vec<ArchiveEntry>> {
 
 pub fn extract_archive(archive: &Path, policy: &ExtractPolicy) -> Result<ExtractResult> {
     let format = detect_format(archive)?;
-    let entries = list_archive(archive).unwrap_or_default();
+    // Skip full list for large multi-GB archives (RAR/7z list walks the solid stream).
+    // Use a cheap size heuristic; WhenNeeded enclosing still prefers a peel folder for RAR/7z.
+    let file_size = archive.metadata().map(|m| m.len()).unwrap_or(0);
+    let entries = if file_size > 512 * 1024 * 1024 && matches!(format, Format::Rar | Format::SevenZ)
+    {
+        Vec::new()
+    } else {
+        list_archive(archive).unwrap_or_default()
+    };
 
     // Always peel into a dedicated folder (product rule).
     let base = policy
@@ -100,15 +108,12 @@ pub fn extract_archive(archive: &Path, policy: &ExtractPolicy) -> Result<Extract
                     }
                 })
                 .collect();
+            // Single top-level item (e.g. one .mkv from a multipart RAR) → extract into
+            // the archive's folder (base). Multiple roots / packages still get *-peeled.
             if tops.len() != 1
                 || matches!(
                     format,
-                    Format::AppBundle
-                        | Format::Dmg
-                        | Format::Pdf
-                        | Format::Exe
-                        | Format::Rar
-                        | Format::SevenZ
+                    Format::AppBundle | Format::Dmg | Format::Pdf | Format::Exe
                 )
             {
                 default_peel_folder(archive, &base)

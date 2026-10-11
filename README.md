@@ -1,6 +1,6 @@
 # Peel
 
-**Single installable macOS app** — Swift glass UI + **native Rust** extraction engine.
+**By [Snack Studio](https://snackstud.io)** — **Single installable macOS app** — Swift glass UI + **native Rust** extraction engine.
 
 No Unarchiver / `unar` / XADMaster dependency. Peel rebuilds that capability.
 
@@ -32,7 +32,8 @@ open -a Peel
 - Drop archives on the glass window
 - **Open…** / **Peel to…**
 - Finder: **Open With → Peel**
-- Optional: **Peel Here** service / droplet
+- Finder **Services**: Peel · Peel to… · Peel & Reveal
+- Passive extract (no Dock) + top-center HUD
 
 ## Develop
 
