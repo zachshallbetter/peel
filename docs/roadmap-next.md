@@ -1,6 +1,7 @@
 # Peel — next work from docs (snapshot)
 
-Living checklist derived from `specification.md`, `finder-quicklook.md`, `macos-system-integration.md`, `containers.md`, and `encryption*.md`. Not a release commitment.
+Living checklist derived from specs/design docs. **Not a release commitment.**  
+**What already ships:** [`SHIPPED.md`](SHIPPED.md). Issues: [SnackStudio/peel](https://github.com/SnackStudio/peel/issues).
 
 ## Now / near-term (engine + macOS product)
 
@@ -8,15 +9,15 @@ Living checklist derived from `specification.md`, `finder-quicklook.md`, `macos-
 | --- | --- |
 | Safety & contracts | PEL-002 audit all adapters; PEL-003 capability registry; PEL-004 real progress/cancel; PEL-005 staging everywhere |
 | Unarchiver parity | Passwords (secure prompt); selective extract UI; multipart qualification; delete-after; encoding |
-| CLI / agents | `probe`/`formats`/`verify` parity; MCP; no password on argv |
-| Finder today | Services Peel / Peel to… / Peel & Reveal; silent HUD; Finder refresh (shipping) |
+| CLI / agents | `probe`/`formats` (exist); `verify` still thin; **MCP not started**; no password on argv |
+| Finder today | Services + HUD + browse-on-open fallback (**shipping**); PeelFS mount often OS-blocked |
 
 ## Differentiating macOS surfaces
 
 | Track | Items |
 | --- | --- |
-| Quick Look | FND-001…003 / MAC-002…003 |
-| PeelFS | MAC-004 scaffold in-tree → live mount/signing → FND-004 |
+| Quick Look | FND-001 scaffold in tree → qualify listing UI (not done) |
+| PeelFS | MAC-004 extension in-tree; **mount disabled on current OS** → Feedback + Gate A |
 | Search | MAC-006 Spotlight importer |
 | Sessions | MAC-001 file coordination |
 | Disk images | MAC-007 Disk Arbitration lifecycle |

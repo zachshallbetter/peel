@@ -1,9 +1,9 @@
 # Peel — Product & Technical Specification
 
-**Version:** 0.2.0 (proposed; parity and qualification update)  
-**Date:** 2026-10-10  
-**Status:** Design specification informed by source excerpts and a macOS UI smoke report; not independently built or audited  
-**Platforms:** macOS, Windows, Linux  
+**Version:** 0.2.1  
+**Date:** 2026-10-11  
+**Status:** **Target specification** — not a checklist of HEAD. For what exists in code, see [`SHIPPED.md`](SHIPPED.md).  
+**Platforms (target):** macOS first; Windows/Linux shells are roadmap only  
 **Positioning:** **Peel — Open what's inside.**
 
 ## 1. Product definition
