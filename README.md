@@ -20,7 +20,9 @@ Peel's everyday archive capabilities remain **free**: extraction, browsing, Find
 
 See [docs/product.md](docs/product.md), [docs/finder-integration.md](docs/finder-integration.md), and [docs/encryption-and-recovery.md](docs/encryption-and-recovery.md).
 
-## Repository architecture (current baseline)
+## Repository architecture (target layout)
+
+This repository does not yet contain the implementation; the layout below is the intended structure, not a description of files present here.
 
 ```text
 app/Peel (SwiftUI)
@@ -34,7 +36,7 @@ The engine owns format interpretation and operation safety. Swift owns native UI
 
 ## Build and run
 
-Prerequisites: compatible macOS/Xcode, Rust/Cargo, and project-specific dependencies.
+These commands apply once the source tree above is present. Prerequisites: compatible macOS/Xcode, Rust/Cargo, and project-specific dependencies.
 
 ```sh
 cargo test -p peel-core
