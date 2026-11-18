@@ -61,3 +61,7 @@ Installation scripts change the local system; inspect them before running. Comma
 ## Contribution rule
 
 Do not promote a feature from proposed to implemented, tested, or qualified without source evidence and repeatable fixtures. Fix secret transport, false-positive verification, resource budgets, path/link containment, and transactional commits before broadening untrusted-container execution. See [AGENTS.md](AGENTS.md).
+
+## License
+
+No license is declared yet. This repository contains no LICENSE file.

@@ -1,0 +1,39 @@
+name: Bug report
+description: An error or inconsistency in Peel's documents.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for the report. A minimal reproduction is the fastest path to a fix.
+  - type: input
+    id: package
+    attributes:
+      label: Document & commit
+      placeholder: docs/architecture.md at commit abc1234
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: What should have happened — quote the README or docs section if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Steps, a command, a code snippet, or a link.
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: Not needed for a documentation issue
