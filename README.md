@@ -64,4 +64,4 @@ Do not promote a feature from proposed to implemented, tested, or qualified with
 
 ## License
 
-No license is declared yet. This repository contains no LICENSE file.
+Proprietary. Peel is software of Snack Studio; this repository is public for reference only and grants no license. See [LICENSE](LICENSE).
